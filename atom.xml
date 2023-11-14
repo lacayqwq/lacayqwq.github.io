@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://lacayqwq.github.io</id>
+    <title>Lacay&apos;s Blog</title>
+    <updated>2023-11-14T14:03:51.939Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://lacayqwq.github.io"/>
+    <link rel="self" href="https://lacayqwq.github.io/atom.xml"/>
+    <subtitle>Attention is All you Need</subtitle>
+    <logo>https://lacayqwq.github.io/images/avatar.png</logo>
+    <icon>https://lacayqwq.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2023, Lacay&apos;s Blog</rights>
+    <entry>
+        <title type="html"><![CDATA[HMER论文阅读笔记]]></title>
+        <id>https://lacayqwq.github.io/post/hmer-lun-wen-yue-du-bi-ji/</id>
+        <link href="https://lacayqwq.github.io/post/hmer-lun-wen-yue-du-bi-ji/">
+        </link>
+        <updated>2023-11-14T13:14:28.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="1eccv-2022-baixiang-can">1.ECCV 2022  BaiXiang  CAN</h2>
+<h3 id="when-counting-meets-hmer-counting-aware-network-for-handwritten-mathematical-expression-recognition">《When Counting Meets HMER: Counting-Aware Network for Handwritten Mathematical Expression Recognition》</h3>
+<p>研究背景：注意力不准确，导致重复识别某符号或者是漏识别某符号<br>
+引入“counting”符号计数，优势：</p>
+<ul>
+<li>隐式地提供符号位置信息，这种位置信息可以使得注意力更加准确</li>
+<li>符号计数结果可以作为额外的全局信息来提升公式识别的准确率（添加标签）<br>
+</br><br>
+CAN模型:</li>
+</ul>
+<ol>
+<li>主干特征提取网络：DenseNet</li>
+<li>多尺度计数模块（MSCM）:<br>
+(1)用计数图的通道数表征类别数，并在得到计数图前使用Sigmoid激活函数将每个元素的值限制在(0,1)的范围内，这样在对计数图进行H和W维度上的加和后，可以直接表征各类符号的计数值。<br>
+(2)针对手写数学公式符号大小多变的特点，采用多尺度的方式提取特征以提高符号计数准确率。</li>
+<li>结合计数的注意力解码器（CCAD）:<br>
+(1) 为了加强模型对于空间位置的感知，使用位置编码表征特征图中不同空间位置。<br>
+(2) 不同于之前大部分公式识别方法只使用局部特征进行符号预测的做法，在进行符号类别预测时引入符号计数结果作为额外的全局信息来提升识别准确率。<br>
+</br><br>
+对于给定的输入图像，主干特征提取网络提取出2D特征图F。随后该特征图F被输入到多尺度计数模块MSCM，输出计数向量V。特征图F和计数向量V都会被输入到结合计数的注意力解码器CCAD来产生最终的预测结果。<br>
+<img src="https://lacayqwq.github.io/post-images/1699967741512.png" alt="" loading="lazy"><br>
+<img src="https://lacayqwq.github.io/post-images/1699967759931.png" alt="" loading="lazy"><br>
+<img src="https://lacayqwq.github.io/post-images/1699967784221.png" alt="" loading="lazy"></li>
+</ol>
+<p>个人感受：</p>
+<ul>
+<li>添加了一个简单的label，采用了空间位置编码，过程上比树类结构简单很多，效果有但提升非常不明显。</li>
+<li>counting的使用是可以改进的，比如采用其他算法更精确地计数。</li>
+<li>能否结合语法树？</li>
+</ul>
+<h2 id="2eccv-2022-pku">2.ECCV 2022   PKU</h2>
+<h3 id="comer-modeling-coverage-for-transformer-based-handwritten-mathematical-expression-recognition">《CoMER: Modeling Coverage for Transformer-based Handwritten Mathematical Expression Recognition》</h3>
+<p>不影响并行性的前提下，根据过去的对齐信息对注意权重进行精炼<br>
+编码器：DenseNet<br>
+Transformer解码器的Token之间不具有空间位置关系,所以与BTTR一致，同时使用图像位置编码和字符位置编码。</p>
+<ul>
+<li>图像位置编码采用二维归一化位置编码。由于模型需要关注的是相对位置，所以首先要将位置坐标归一化。给定二维坐标元组，编码维数为d，通过一维位置的拼接计算二维图像位置编码</li>
+<li>1D位置编码：给定编码维数d，位置p，特征维索引i<br>
+Transformer中直接采用RNN式的覆盖注意力机制 产生的覆盖矩阵过大，因此修改注意力机:<img src="https://lacayqwq.github.io/post-images/1699967796609.png" alt="" loading="lazy">命名为注意力精炼框架<br>
+为了在Transformer中使用这一框架，作者提出了注意精炼模块(ARM)。可以将Transformer中的点积矩阵作为注意项，精炼项矩阵R需要从经过Softmax后的注意权值A中计算出来。作者定义了一个将注意力权重作为输入，输出为精炼矩阵的函数。作者认为该函数可以提取局部覆盖特征来检测已解析区域的边缘，并识别传入的未解析区域。最终，作者通过减去精炼项R来达到精炼注意力项E的目的。<br>
+权重A的具体选择。作者提出了</li>
+<li>自覆盖:当前层生成的对齐信息作为注意精炼模块的输入</li>
+<li>交叉覆盖:使用前一层的对齐信息作为当前层ARM的输入</li>
+<li>融合覆盖:来自当前层的注意权重与来自前一层的精炼注意权重进行拼接<br>
+三种模式，以利用不同阶段的对齐信息。<br>
+<img src="https://lacayqwq.github.io/post-images/1699967824203.png" alt="" loading="lazy"><br>
+个人感受：</li>
+<li>位置编码方法可以学习；</li>
+<li>注意力精炼</li>
+</ul>
+<h2 id="3aaai-2022">3.AAAI 2022</h2>
+<h3 id="handwritten-mathematical-expression-recognition-via-attention-aggregation-based-bi-directional-mutual-learning">《Handwritten Mathematical Expression Recognition via Attention Aggregation based Bi-directional Mutual Learning》</h3>
+<p><strong>背景:</strong> 基于两个已有方法</p>
+<ul>
+<li>基于Seq2Seq架构的手写数学公式识别模型<strong>WAP</strong>，利用RNN解码器将视觉特征解码成LaTeX字符串。RNN解码器中的Coverage注意机制，通过考虑过去的对齐概率很好地克服注意力机制带来的解析不足或过度解析的问题。<br>
+不足：基于WAP的方法都没有充分的利用“未来”信息，而仅计算了历史注意力。<br>
+</br></li>
+<li><strong>BTTR</strong> 首次在公式识别中引入了双向Transformer Decoder解码器，并且在解码的时候利用双向解码信息。<br>
+不足：BTTR对双向信息利用做了初步尝试，但在训练时一个方向的解码器时并没有显式地利用到另一个方向的信息。没有充分融合公式符号的多尺度特征。<br>
+</br><br>
+<img src="https://lacayqwq.github.io/post-images/1699967847371.png" alt="" loading="lazy"></li>
+</ul>
+<p><strong>提出ABM的端到端公式识别框架：</strong><br>
+<img src="https://lacayqwq.github.io/post-images/1699967901001.png" alt="" loading="lazy"></p>
+<ul>
+<li>特征提取模块（FEM）：采用CNN从数学表达式图片中提取特征信息；</li>
+<li>
+<ul>
+<li>使用DenseNet作为编码器。相较于ResNet，DenseNet在不同尺度特征图上的密集连接能够更好地反映出不同大小字符的尺度特征，有利于后续解码不同位置大小字符的含义。</li>
+</ul>
+</li>
+<li>注意力聚合模块（AAM）：集成了Multi-Coverage注意力机制，主要对齐历史注意信息，同时兼顾不同大小符号的特征尺度学习；</li>
+<li>
+<ul>
+<li>基于Coverage的注意力机制能更好地对齐特征信息并指导网络对未关注区域分配更高的注意力概率。受 Inception模块的启发，本文提出了的注意力聚合模块 (AAM)。</li>
+</ul>
+</li>
+<li>
+<ul>
+<li>与传统注意力相比，其具有两个不同卷积核大小的Coverage分支，不仅关注精细的局部特征，还关注更大感受野上的全局信息。从而帮助模型捕捉更准确的空间关系。</li>
+</ul>
+</li>
+<li>双向相互学习模块(BML)：由从左到右和从右到左（L2R和R2L）两个具有相反方向解码器构成，在训练阶段每个解码器不仅学习自身LaTeX序列，同时也通过自蒸馏的方法学习另一分支信息，从而提高解码能力；</li>
+<li>
+<ul>
+<li>对于两个分支输出的概率分布，作者引入自蒸馏思想，将两解码分支通过Kullback-Leibler (KL) 损失函数在每个时间步上对预测的软概率作为标签进行交互学习。最终整体网络的目标为最小化两个分支的交叉熵损失与交互学习的KL损失之和。<br>
+(这里文章都给出了具体的计算公式，参见https://blog.csdn.net/moxibingdao/article/details/124464298)<br>
+<strong>结果</strong>：<img src="https://lacayqwq.github.io/post-images/1699967908610.png" alt="" loading="lazy"><br>
+还对比了同样具有AAM和BML的单向解码器，将编码器和解码器都替换来说明ABM效果的普适。<br>
+<strong>个人体会：</strong> 双向方法不罕见，但自蒸馏公式值得借鉴。注意力聚合也有价值。总得来说有创新但是不多。</li>
+</ul>
+</li>
+</ul>
+<h2 id="4cvpr-2022">4.CVPR 2022</h2>
+<h3 id="syntax-aware-network-for-handwritten-mathematical-expression-recognition语法感知网络">《Syntax-Aware Network for Handwritten Mathematical Expression Recognition》——<strong>语法感知网络</strong></h3>
+<p><strong>背景:</strong> 主流的识别方法主要为序列识别方法和树解码方法，这些方法都或多或少忽视了公式中的语法信息。为了解决公式识别中的结构预测错误并提升复杂语法树的理解，论文提出了一个语法规则，自然地将语法树划分成不同的组件，有效地减少树结构的歧义。同时，论文提出了一个语法感知网络（Syntax-Aware Network, SAN），将语法约束和特征学习结合到统一的框架中。如图1（c）所示，SAN的预测过程遵循语法树的遍历过程，其子树是数学表达式的重要组成成分。通过此方式，相邻组件的关系得以在SAN中进行编码建模。因此，SAN的预测是从一个组件到另一个组件进行的。<br>
+<img src="https://lacayqwq.github.io/post-images/1699967918300.png" alt="" loading="lazy"><br>
+<img src="https://lacayqwq.github.io/post-images/1699967923053.png" alt="" loading="lazy"><br>
+<img src="https://lacayqwq.github.io/post-images/1699967927784.png" alt="" loading="lazy"><br>
+As it is illustrated in Fig. 7, <strong>distorted and sticking</strong> components of ME can cause failure to SAN prediction, which leads to the under/over translation.<br>
+<img src="https://lacayqwq.github.io/post-images/1699967936039.png" alt="" loading="lazy"><br>
+<strong>个人体会：</strong> 语法体系很有开创性。</p>
+<h2 id="5icdar-2021-其一">5.ICDAR 2021 其一</h2>
+<h3 id="an-encoder-decoder-approach-to-handwritten-mathematical-expression-recognition-with-multi-head-attention-and-stacked-decoder">《An Encoder-Decoder Approach to Handwritten Mathematical Expression Recognition with Multi-head Attention and Stacked Decoder》</h3>
+<p>主要是运用了多头注意力<br>
+但是堆叠解码器效率很低<br>
+<img src="https://lacayqwq.github.io/post-images/1699967992620.png" alt="" loading="lazy"></p>
+<h2 id="6icdar-2021-其二">6.ICDAR 2021 其二</h2>
+<h3 id="global-context-for-improving-recognition-of-online-handwritten-mathematical-expressions">Global Context for Improving Recognition of Online Handwritten Mathematical Expressions.</h3>
+<p>三个子任务:字符划分，字符识别，关系分类</p>
+<ul>
+<li>The model benefits from the global context by deep neural networks and avoids the dependency of handcrafted features.</li>
+<li>the Deep Neural Network approach currently suffers<br>
+from a high cost of recognition due to its complexity.</li>
+<li>现有方法：通过sequential models获得 global context。两个团队用双向RNNs和基于树结构的双向RNNs改进了符号划分和识别，但是在关系分类上并不能很好地利用global context.</li>
+<li>提出方法：We apply a new parsing method at the symbol level instead of the stroke level to produce the result of HME<br>
+recognition. In the parsing process, missing relations are reevaluated by applying the<br>
+temporal classifier.<br>
+BLSTM/Tree-BLSTM<br>
+<img src="https://lacayqwq.github.io/post-images/1699968002423.png" alt="" loading="lazy"></li>
+<li>以符号关系树SRT标识符号关系，6种关系：</li>
+<li>
+<ul>
+<li>Above</li>
+</ul>
+</li>
+<li>
+<ul>
+<li>Below</li>
+</ul>
+</li>
+<li>
+<ul>
+<li>Sub (subscript)</li>
+</ul>
+</li>
+<li>
+<ul>
+<li>Sup (superscript)</li>
+</ul>
+</li>
+<li>
+<ul>
+<li>Right</li>
+</ul>
+</li>
+<li>
+<ul>
+<li>Inside (square root)<br>
+以连续符号路径和空间关系来表示一个HME<br>
+特征序列，符号解析器<br>
+<img src="https://lacayqwq.github.io/post-images/1699968008872.png" alt="" loading="lazy"><br>
+Here, we propose a sequential model for recognizing both symbols and spatial relations. The model is a temporal classifier that uses a feature sequence as input and output<br>
+the sequence of symbols and spatial relations between two consecutive symbols. The<br>
+temporal classifier produces the probabilities of symbols and relations for every time<br>
+step of the input sequence. The input sequence consists of both strokes and off-strokes,<br>
+where an off-stroke is a virtual pen trace between two consecutive strokes, connecting<br>
+the end of the first stroke to the beginning of the second stroke.<br>
+<img src="https://lacayqwq.github.io/post-images/1699968014662.png" alt="" loading="lazy"><br>
+用CTC训练BLSTM，CTC引入空白标签，计算路径和blank的概率，最后最小化CTC的损失</li>
+</ul>
+</li>
+</ul>
+<h2 id="7crohme-数据集">7.Crohme 数据集</h2>
+<p><img src="https://lacayqwq.github.io/post-images/1699968020201.png" alt="" loading="lazy"><br>
+<img src="https://lacayqwq.github.io/post-images/1699968030616.png" alt="" loading="lazy"></p>
+<h2 id="8svm-大模型">8.SVM 大模型</h2>
+<figure data-type="image" tabindex="1"><img src="https://lacayqwq.github.io/post-images/1699968035534.png" alt="" loading="lazy"></figure>
+]]></content>
+    </entry>
+</feed>
